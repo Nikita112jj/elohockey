@@ -1,0 +1,1460 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>ICE CLASH — Online Hockey</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="https://unpkg.com/lucide-static@latest/font/lucide.css">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+  :root {
+    --bg-primary: #0f1923;
+    --bg-secondary: #1a2634;
+    --bg-card: #223044;
+    --bg-hover: #2a3a50;
+    --text-primary: #e8edf2;
+    --text-secondary: #8899aa;
+    --text-muted: #556677;
+    --accent: #4a9eff;
+    --accent-hover: #6ab4ff;
+    --accent-dim: rgba(74, 158, 255, 0.15);
+    --red: #ef4444;
+    --red-dim: rgba(239, 68, 68, 0.15);
+    --green: #22c55e;
+    --green-dim: rgba(34, 197, 94, 0.15);
+    --gold: #f59e0b;
+    --gold-dim: rgba(245, 158, 11, 0.15);
+    --border: rgba(255,255,255,0.06);
+    --border-accent: rgba(74, 158, 255, 0.3);
+    --shadow: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.4);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-lg: 16px;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
+
+  body {
+    background: var(--bg-primary);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-primary);
+  }
+
+  .screen { display:none; width:100vw; height:100vh; position:absolute; top:0; left:0; }
+  .screen.active { display:flex; flex-direction:column; align-items:center; justify-content:center; }
+
+  /* ===== MENU ===== */
+  #menuScreen {
+    background: var(--bg-primary);
+    gap: 0;
+    position: relative;
+  }
+  .menu-bg-pattern {
+    position:absolute; inset:0;
+    background-image:
+      radial-gradient(circle at 20% 80%, rgba(74,158,255,0.04) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(74,158,255,0.03) 0%, transparent 50%);
+  }
+  .menu-logo {
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(2.2rem, 7vw, 4rem);
+    font-weight: 900;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+    position: relative;
+    z-index:2;
+    display: flex;
+    align-items: center;
+    gap: 0.3em;
+  }
+  .menu-logo-icon {
+    width: clamp(2rem, 6vw, 3.5rem);
+    height: clamp(2rem, 6vw, 3.5rem);
+    background: var(--accent);
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(1.2rem, 3vw, 2rem);
+  }
+  .menu-logo span { color: var(--accent); }
+  .menu-sub {
+    color: var(--text-muted);
+    font-size: clamp(0.75rem, 2vw, 0.9rem);
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 3em;
+    position:relative; z-index:2;
+  }
+  .menu-btns { display:flex; flex-direction:column; gap:0.75em; width:min(340px, 85vw); position:relative; z-index:2; }
+  
+  .btn {
+    padding: 0.85em 1.5em;
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6em;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: var(--shadow);
+  }
+  .btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: var(--shadow-lg); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-outline {
+    background: transparent;
+    border: 1.5px solid var(--border);
+    color: var(--text-primary);
+  }
+  .btn-outline:hover { background: var(--bg-card); border-color: var(--border-accent); }
+  .btn-ghost {
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { background: var(--bg-hover); color: var(--text-primary); }
+  .btn-danger {
+    background: var(--red-dim);
+    color: var(--red);
+    border: 1px solid rgba(239,68,68,0.2);
+  }
+  .btn-danger:hover { background: rgba(239,68,68,0.25); }
+  
+  .btn-icon {
+    position:absolute; top:16px; right:16px; width:44px; height:44px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor:pointer; z-index:10;
+    display:flex; align-items:center; justify-content:center;
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    transition: all 0.15s;
+  }
+  .btn-icon:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+  .icon { font-family: 'lucide'; font-style: normal; font-size: 1.1em; }
+
+  /* ===== MATCHMAKING ===== */
+  #matchScreen { background: var(--bg-primary); gap:1.5em; }
+  .match-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 2.5em 2em;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.2em;
+    width: min(360px, 88vw);
+    box-shadow: var(--shadow-lg);
+  }
+  .match-title { font-size:1.1rem; font-weight:700; color:var(--text-primary); }
+  .match-spinner-ring {
+    width:56px; height:56px;
+    border:3px solid var(--bg-card);
+    border-top-color: var(--accent);
+    border-radius:50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .match-status { color:var(--text-secondary); font-size:0.85rem; font-weight:500; }
+  .match-timer { color:var(--text-primary); font-family:'Inter',sans-serif; font-size:1.8rem; font-weight:800; }
+
+  /* ===== SETTINGS ===== */
+  #settingsScreen {
+    background: var(--bg-primary);
+    gap:1.2em; padding:20px;
+  }
+  .settings-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    margin-bottom: 0.5em;
+  }
+  .settings-title { font-size:1.3rem; font-weight:700; color:var(--text-primary); }
+  .settings-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.2em;
+    width: min(400px, 90vw);
+  }
+  .settings-label {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.5em;
+  }
+  .settings-input {
+    width:100%; padding:0.65em 0.9em;
+    background: var(--bg-card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    outline:none;
+    transition: border-color 0.2s;
+  }
+  .settings-input:focus { border-color: var(--accent); }
+  .settings-input::placeholder { color: var(--text-muted); }
+  
+  .avatar-grid {
+    display:grid; grid-template-columns:repeat(5,1fr); gap:8px;
+    width:100%;
+  }
+  .avatar-opt {
+    width:100%; aspect-ratio:1;
+    border-radius: var(--radius);
+    overflow:hidden;
+    border:2px solid transparent;
+    cursor:pointer;
+    transition: all 0.15s;
+    background: var(--bg-card);
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.5rem;
+  }
+  .avatar-opt:hover { border-color: var(--border-accent); background: var(--bg-hover); }
+  .avatar-opt.selected { border-color: var(--accent); background: var(--accent-dim); }
+  .avatar-opt img { width:100%; height:100%; object-fit:cover; border-radius: var(--radius); }
+  .avatar-upload-btn {
+    width:100%; aspect-ratio:1;
+    border-radius: var(--radius);
+    border: 1.5px dashed var(--text-muted);
+    cursor:pointer;
+    background: transparent;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.2rem; color: var(--text-muted);
+    transition: all 0.15s;
+    flex-direction:column; gap:2px;
+  }
+  .avatar-upload-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+  .avatar-upload-btn span { font-size:0.5rem; font-weight:600; letter-spacing:0.05em; }
+  #avatarFileInput { display:none; }
+
+  /* ===== GAME ===== */
+  #gameScreen { background:#000; padding:0; }
+  canvas { display:block; touch-action:none; }
+  .game-ui {
+    position:absolute; top:0; left:0; right:0;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 16px;
+    background:linear-gradient(180deg,rgba(15,25,35,0.92) 0%,rgba(15,25,35,0.6) 70%,transparent 100%);
+    pointer-events:none; z-index:5;
+  }
+  .score-box { display:flex; align-items:center; gap:8px; }
+  .score-info { display:flex; flex-direction:column; }
+  .score-name { font-size:0.65rem; color:var(--text-muted); font-weight:600; letter-spacing:0.05em; text-transform:uppercase; }
+  .score-num { font-size:1.8rem; font-weight:900; color:var(--text-primary); line-height:1; }
+  .score-num.mine { color:var(--accent); }
+  .score-num.enemy { color:var(--red); }
+  .game-timer-box { text-align:center; }
+  .game-timer { font-size:1.3rem; font-weight:800; color:var(--text-primary); }
+  .game-period { font-size:0.6rem; color:var(--text-muted); font-weight:600; letter-spacing:0.1em; text-transform:uppercase; }
+  .game-ping { font-size:0.55rem; color:var(--text-muted); font-weight:500; }
+  .game-player-avatar {
+    width:34px; height:34px; border-radius: var(--radius-sm);
+    overflow:hidden;
+    border:2px solid var(--accent);
+    background: var(--bg-card);
+    display:flex; align-items:center; justify-content:center;
+    font-size: 1rem;
+  }
+  .game-player-avatar.enemy { border-color:var(--red); }
+  .game-player-avatar img { width:100%; height:100%; object-fit:cover; }
+
+  .shoot-btn {
+    position:absolute; bottom:24px; right:24px;
+    width:60px; height:60px;
+    background: var(--accent);
+    border:none;
+    border-radius: 50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.6rem;
+    cursor:pointer; z-index:5;
+    pointer-events:auto;
+    transition: all 0.12s;
+    box-shadow: 0 4px 16px rgba(74,158,255,0.4);
+    color: #fff;
+  }
+  .shoot-btn:active { transform:scale(0.9); background: var(--accent-hover); }
+
+  #goalOverlay {
+    position:absolute; inset:0; z-index:20;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    pointer-events:none;
+    opacity:0; transition:opacity 0.3s;
+  }
+  #goalOverlay.show { opacity:1; }
+  .goal-text {
+    font-family:'Inter',sans-serif;
+    font-size:clamp(2.5rem,9vw,6rem);
+    font-weight:900;
+    text-transform:uppercase;
+    letter-spacing:-0.02em;
+    animation: goalPop 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes goalPop { from { transform:scale(0.3); opacity:0; } to { transform:scale(1); opacity:1; } }
+  .goal-sub { color:rgba(255,255,255,0.6); font-size:1rem; font-weight:500; margin-top:0.3em; }
+
+  /* RESULT */
+  #resultScreen {
+    background: var(--bg-primary);
+    gap:1.5em;
+  }
+  .result-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 2.5em 2em;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.8em;
+    width: min(340px, 88vw);
+    box-shadow: var(--shadow-lg);
+  }
+  .result-icon { font-size:3.5rem; margin-bottom:0.2em; }
+  .result-title { font-size:1.6rem; font-weight:800; }
+  .result-score { font-size:2.8rem; font-weight:900; }
+  .result-win { color: var(--gold); }
+  .result-loss { color: var(--red); }
+  .result-draw { color: var(--accent); }
+  .result-btns { display:flex; flex-direction:column; gap:0.6em; width:min(280px,80vw); margin-top:0.5em; }
+</style>
+</head>
+<body>
+
+<!-- MENU -->
+<div id="menuScreen" class="screen active">
+  <div class="menu-bg-pattern"></div>
+  <button class="btn-icon" onclick="openSettings()">⚙</button>
+  <div class="menu-logo">
+    <div class="menu-logo-icon">🏒</div>
+    ICE <span>CLASH</span>
+  </div>
+  <div class="menu-sub">Online Hockey</div>
+  <div class="menu-btns">
+    <button class="btn btn-primary" onclick="startMatchmaking()">
+      <span>🌐</span> Найти игру
+    </button>
+    <button class="btn btn-outline" onclick="startVsBot()">
+      <span>🤖</span> Играть с ботом
+    </button>
+  </div>
+</div>
+
+<!-- MATCHMAKING -->
+<div id="matchScreen" class="screen">
+  <div class="match-card">
+    <div class="match-spinner-ring"></div>
+    <div class="match-title">Поиск игрока</div>
+    <div class="match-status" id="matchStatus">Ожидание соперника...</div>
+    <div class="match-timer" id="matchTimer">0:00</div>
+  </div>
+  <button class="btn btn-danger" style="width:min(280px,75vw);margin-top:1.2em" onclick="cancelMatchmaking()">
+    Отмена
+  </button>
+</div>
+
+<!-- SETTINGS -->
+<div id="settingsScreen" class="screen">
+  <div class="settings-header">
+    <span style="font-size:1.4rem">⚙</span>
+    <div class="settings-title">Настройки</div>
+  </div>
+  <div class="settings-card">
+    <div class="settings-label">Имя игрока</div>
+    <input type="text" class="settings-input" id="nameInput" maxlength="16" placeholder="Введи имя...">
+  </div>
+  <div class="settings-card" style="margin-top:0.6em">
+    <div class="settings-label">Аватарка</div>
+    <div class="avatar-grid" id="avatarGrid"></div>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:0.8em;width:min(400px,90vw)">
+    <button class="btn btn-primary" style="flex:1" onclick="saveSettings()">Сохранить</button>
+    <button class="btn btn-ghost" style="flex:1" onclick="backToMenu()">Назад</button>
+  </div>
+  <input type="file" id="avatarFileInput" accept="image/*" onchange="handleAvatarUpload(event)">
+</div>
+
+<!-- GAME -->
+<div id="gameScreen" class="screen">
+  <canvas id="gameCanvas"></canvas>
+  <div class="game-ui" id="gameUI">
+    <div class="score-box">
+      <div class="game-player-avatar" id="myAvatarUI"><img id="myAvatarImg" src="" alt=""></div>
+      <div class="score-info">
+        <div class="score-name" id="myName">Ты</div>
+        <div class="score-num mine" id="myScore">0</div>
+      </div>
+    </div>
+    <div class="game-timer-box">
+      <div class="game-timer" id="gameTimer">3:00</div>
+      <div class="game-period">ПЕРИОД 1</div>
+      <div class="game-ping" id="gamePing"></div>
+    </div>
+    <div class="score-box" style="flex-direction:row-reverse">
+      <div class="game-player-avatar enemy" id="enemyAvatarUI"><img id="enemyAvatarImg" src="" alt=""></div>
+      <div class="score-info" style="text-align:right">
+        <div class="score-name" id="enemyName">Соперник</div>
+        <div class="score-num enemy" id="enemyScore">0</div>
+      </div>
+    </div>
+  </div>
+  <button class="shoot-btn" id="shootBtn" onpointerdown="manualShoot()">🏒</button>
+  <div id="goalOverlay">
+    <div class="goal-text" id="goalText">ГОЛ!</div>
+    <div class="goal-sub" id="goalSub"></div>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div id="resultScreen" class="screen">
+  <div class="result-card">
+    <div class="result-icon" id="resultTrophy">🏆</div>
+    <div class="result-title" id="resultTitle">Победа!</div>
+    <div class="result-score" id="resultScore"></div>
+  </div>
+  <div class="result-btns">
+    <button class="btn btn-primary" onclick="backToMenu()">В главное меню</button>
+    <button class="btn btn-outline" onclick="startVsBot()">Играть с ботом</button>
+  </div>
+</div>
+
+<script>
+// ==================== CONFIG ====================
+const SUPABASE_URL = 'https://xzggbhhxescghsgrfsdi.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_5JWXQFr78evpyAixvfkG6A_v0nPXSAW';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ==================== STATE ====================
+let playerSettings = JSON.parse(localStorage.getItem('hockeySettings') || '{}');
+if (!playerSettings.name) playerSettings.name = 'Игрок';
+if (!playerSettings.avatar) playerSettings.avatar = '🏒';
+
+const AVATARS_EMOJI = ['🏒','⛸️','🏆','🥅','🎯','🦁','🐯','🦊','🐺','🐧','🦅','🔥','❄️','💎','⚡'];
+let selectedAvatar = playerSettings.avatar;
+let customAvatarData = playerSettings.customAvatar || null;
+
+let canvas, ctx;
+let gameRunning = false;
+let isBot = false;
+let myId = '';
+let opponentId = '';
+let isHost = false;
+let isMobile = false;
+let channel = null;
+let guestListenChannel = null;
+let matchSearchInterval = null;
+let matchTimerInterval = null;
+let matchSeconds = 0;
+let gameTimerInterval = null;
+let gameSecondsLeft = 180;
+let matchmakingActive = false;
+
+// Ping
+let pingMs = 0;
+let lastPingSent = 0;
+let pingInterval = null;
+
+// Physics
+let GW = 0, GH = 0;
+let myPlayer = { x:0, y:0, r:0, vx:0, vy:0 };
+let opPlayer = { x:0, y:0, r:0 };
+let puck = { x:0, y:0, r:0, vx:0, vy:0 };
+let scoreMe = 0, scoreOp = 0;
+// Drag - player follows finger/mouse while held
+let dragActive = false;
+let dragPointerId = null;
+let dragOffsetX = 0, dragOffsetY = 0;
+let lastSendTime = 0;
+let animFrame = null;
+let goalCooldown = false;
+
+let botShootTimer = 60;
+
+let leftGoalY1=0, leftGoalY2=0, leftGoalX=0;
+let rightGoalY1=0, rightGoalY2=0, rightGoalX=0;
+
+// ==================== INIT ====================
+function init() {
+  canvas = document.getElementById('gameCanvas');
+  ctx = canvas.getContext('2d');
+  isMobile = window.innerWidth <= 768 || ('ontouchstart' in window);
+  setupAvatarGrid();
+  loadSettingsForm();
+}
+
+// ==================== SETTINGS ====================
+function setupAvatarGrid() {
+  const grid = document.getElementById('avatarGrid');
+  grid.innerHTML = '';
+  AVATARS_EMOJI.forEach(a => {
+    const d = document.createElement('div');
+    d.className = 'avatar-opt' + (playerSettings.avatar === a && !customAvatarData ? ' selected' : '');
+    d.textContent = a;
+    d.onclick = () => selectAvatar(a, null, d);
+    grid.appendChild(d);
+  });
+  const up = document.createElement('div');
+  up.className = 'avatar-upload-btn';
+  up.innerHTML = '📷<span>Загрузить</span>';
+  up.onclick = () => document.getElementById('avatarFileInput').click();
+  grid.appendChild(up);
+  if (customAvatarData) {
+    const previewEl = document.createElement('div');
+    previewEl.className = 'avatar-opt selected';
+    previewEl.id = 'customAvatarPreview';
+    const img = document.createElement('img');
+    img.src = customAvatarData;
+    previewEl.appendChild(img);
+    previewEl.onclick = () => selectAvatar(null, customAvatarData, previewEl);
+    grid.insertBefore(previewEl, up);
+  }
+}
+
+function selectAvatar(emoji, customData, el) {
+  document.querySelectorAll('.avatar-opt').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedAvatar = emoji || null;
+  customAvatarData = customData || null;
+}
+
+function handleAvatarUpload(evt) {
+  const file = evt.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    customAvatarData = e.target.result;
+    selectedAvatar = null;
+    setupAvatarGrid();
+    const preview = document.getElementById('customAvatarPreview');
+    if (preview) { document.querySelectorAll('.avatar-opt').forEach(a=>a.classList.remove('selected')); preview.classList.add('selected'); }
+  };
+  reader.readAsDataURL(file);
+}
+
+function loadSettingsForm() {
+  document.getElementById('nameInput').value = playerSettings.name || '';
+}
+
+function saveSettings() {
+  const name = document.getElementById('nameInput').value.trim() || 'Игрок';
+  playerSettings.name = name;
+  playerSettings.avatar = selectedAvatar;
+  playerSettings.customAvatar = customAvatarData;
+  localStorage.setItem('hockeySettings', JSON.stringify(playerSettings));
+  backToMenu();
+}
+
+function openSettings() { showScreen('settingsScreen'); loadSettingsForm(); setupAvatarGrid(); }
+function backToMenu() { cleanupMatchmaking(); cleanupGame(); showScreen('menuScreen'); }
+
+// ==================== SCREENS ====================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ==================== CLEANUP ====================
+function cleanupMatchmaking() {
+  matchmakingActive = false;
+  if (matchSearchInterval) { clearInterval(matchSearchInterval); matchSearchInterval = null; }
+  if (matchTimerInterval) { clearInterval(matchTimerInterval); matchTimerInterval = null; }
+  if (channel && !gameRunning) { 
+    try { channel.unsubscribe(); } catch(e) {} 
+    channel = null; 
+  }
+  if (guestListenChannel) { 
+    try { guestListenChannel.unsubscribe(); } catch(e) {} 
+    guestListenChannel = null; 
+  }
+  opponentId = '';
+}
+
+function cleanupGame() {
+  gameRunning = false;
+  if (gameTimerInterval) { clearInterval(gameTimerInterval); gameTimerInterval = null; }
+  if (pingInterval) { clearInterval(pingInterval); pingInterval = null; }
+  if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
+  if (channel) { 
+    try { channel.unsubscribe(); } catch(e) {} 
+    channel = null; 
+  }
+}
+
+// ==================== MATCHMAKING ====================
+async function startMatchmaking() {
+  cleanupMatchmaking();
+  cleanupGame();
+  
+  myId = 'player_' + Math.random().toString(36).substr(2,9) + '_' + Date.now();
+  matchmakingActive = true;
+  showScreen('matchScreen');
+  matchSeconds = 0;
+  document.getElementById('matchStatus').textContent = 'Ожидание соперника...';
+  document.getElementById('matchTimer').textContent = '0:00';
+  
+  matchTimerInterval = setInterval(() => {
+    matchSeconds++;
+    const m = Math.floor(matchSeconds/60), s = matchSeconds%60;
+    document.getElementById('matchTimer').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+  }, 1000);
+
+  // Listen for other players seeking
+  channel = sb.channel('matchmaking_lobby', { 
+    config: { broadcast: { self: false } } 
+  });
+  
+  channel.on('broadcast', { event: 'seek' }, (msg) => {
+    if (!matchmakingActive) return;
+    const d = msg.payload;
+    if (d.id !== myId && !opponentId) {
+      opponentId = d.id;
+      isHost = true;
+      matchmakingActive = false;
+      initiateOnlineGame(d);
+    }
+  });
+
+  await channel.subscribe((status) => {
+    console.log('Matchmaking channel status:', status);
+  });
+
+  // Broadcast that we're seeking
+  matchSearchInterval = setInterval(() => {
+    if (!matchmakingActive) return;
+    channel.send({ 
+      type: 'broadcast', 
+      event: 'seek', 
+      payload: { id: myId, name: playerSettings.name, avatar: getAvatarForSend(), ts: Date.now() } 
+    });
+  }, 1200);
+
+  // Also listen on personal channel for start invites
+  guestListenChannel = sb.channel('personal_' + myId, { 
+    config: { broadcast: { self: false } } 
+  });
+  guestListenChannel.on('broadcast', { event: 'game_invite' }, (msg) => {
+    if (!matchmakingActive) return;
+    if (opponentId) return;
+    opponentId = msg.payload.hostId;
+    isHost = false;
+    matchmakingActive = false;
+    joinOnlineGame(msg.payload);
+  });
+  await guestListenChannel.subscribe((status) => {
+    console.log('Personal channel status:', status);
+  });
+
+  // Initial broadcast
+  setTimeout(() => {
+    if (matchmakingActive && channel) {
+      channel.send({ 
+        type: 'broadcast', 
+        event: 'seek', 
+        payload: { id: myId, name: playerSettings.name, avatar: getAvatarForSend(), ts: Date.now() } 
+      });
+    }
+  }, 500);
+}
+
+async function initiateOnlineGame(opData) {
+  // We are host. Clean up matchmaking channels
+  if (matchSearchInterval) { clearInterval(matchSearchInterval); matchSearchInterval = null; }
+  if (matchTimerInterval) { clearInterval(matchTimerInterval); matchTimerInterval = null; }
+  if (channel) { try { channel.unsubscribe(); } catch(e){} channel = null; }
+  if (guestListenChannel) { try { guestListenChannel.unsubscribe(); } catch(e){} guestListenChannel = null; }
+
+  const roomId = 'room_' + myId + '_' + opponentId;
+
+  // Send invite to guest via their personal channel
+  const inviteCh = sb.channel('personal_' + opponentId, {
+    config: { broadcast: { self: false } }
+  });
+  await inviteCh.subscribe();
+  
+  // Send multiple times to ensure delivery
+  for (let i = 0; i < 3; i++) {
+    setTimeout(() => {
+      inviteCh.send({ 
+        type: 'broadcast', 
+        event: 'game_invite', 
+        payload: { 
+          hostId: myId, 
+          name: playerSettings.name, 
+          avatar: getAvatarForSend(), 
+          roomId 
+        } 
+      });
+    }, i * 300);
+  }
+  setTimeout(() => { try { inviteCh.unsubscribe(); } catch(e){} }, 3000);
+
+  // Set up game room
+  await setupGameRoom(roomId, opData);
+}
+
+async function joinOnlineGame(hostData) {
+  if (matchSearchInterval) { clearInterval(matchSearchInterval); matchSearchInterval = null; }
+  if (matchTimerInterval) { clearInterval(matchTimerInterval); matchTimerInterval = null; }
+  if (channel) { try { channel.unsubscribe(); } catch(e){} channel = null; }
+  if (guestListenChannel) { try { guestListenChannel.unsubscribe(); } catch(e){} guestListenChannel = null; }
+
+  const roomId = hostData.roomId;
+  await setupGameRoom(roomId, hostData);
+}
+
+async function setupGameRoom(roomId, opData) {
+  channel = sb.channel(roomId, { 
+    config: { broadcast: { self: false } } 
+  });
+
+  channel.on('broadcast', { event: 'state' }, (msg) => receiveState(msg.payload));
+  channel.on('broadcast', { event: 'goal_event' }, (msg) => receiveGoal(msg.payload));
+  channel.on('broadcast', { event: 'puck_sync' }, (msg) => receivePuck(msg.payload));
+  channel.on('broadcast', { event: 'reset_pos' }, () => resetPositions());
+  channel.on('broadcast', { event: 'pong' }, (msg) => {
+    if (msg.payload.target === myId) {
+      pingMs = Date.now() - msg.payload.sentAt;
+    }
+  });
+  channel.on('broadcast', { event: 'ping' }, (msg) => {
+    if (msg.payload.target === myId || !msg.payload.target) {
+      channel.send({ type:'broadcast', event:'pong', payload: { target: msg.payload.from, sentAt: msg.payload.sentAt } });
+    }
+  });
+
+  await channel.subscribe((status) => {
+    console.log('Game room status:', status);
+    if (status === 'SUBSCRIBED') {
+      // Confirm we're in the game
+      channel.send({ type:'broadcast', event:'state', payload:{ x:0.5, y:0.5, joined: true, id: myId } });
+    }
+  });
+
+  document.getElementById('myName').textContent = playerSettings.name;
+  document.getElementById('enemyName').textContent = opData.name || 'Соперник';
+  setAvatarUI('myAvatarUI', getAvatarForSend());
+  setAvatarUI('enemyAvatarUI', opData.avatar || '🏒');
+  _enemyAvatar = opData.avatar || '🏒';
+
+  beginGame(false);
+  
+  // Start ping measurement
+  pingInterval = setInterval(() => {
+    if (channel && gameRunning) {
+      channel.send({ type:'broadcast', event:'ping', payload: { from: myId, target: opponentId, sentAt: Date.now() } });
+    }
+  }, 3000);
+}
+
+function cancelMatchmaking() {
+  cleanupMatchmaking();
+  showScreen('menuScreen');
+}
+
+// ==================== VS BOT ====================
+function startVsBot() {
+  cleanupMatchmaking();
+  cleanupGame();
+  isBot = true;
+  isHost = true;
+  myId = 'me';
+  opponentId = 'bot';
+  document.getElementById('myName').textContent = playerSettings.name;
+  document.getElementById('enemyName').textContent = 'Бот';
+  setAvatarUI('myAvatarUI', getAvatarForSend());
+  setAvatarUI('enemyAvatarUI', '🤖');
+  _enemyAvatar = '🤖';
+  document.getElementById('gamePing').textContent = '';
+  beginGame(true);
+}
+
+// ==================== GAME INIT ====================
+function beginGame(vsBot) {
+  isBot = vsBot;
+  scoreMe = 0; scoreOp = 0;
+  gameSecondsLeft = 180;
+  pingMs = 0;
+  document.getElementById('myScore').textContent = '0';
+  document.getElementById('enemyScore').textContent = '0';
+  showScreen('gameScreen');
+  resizeCanvas();
+  resetPositions();
+  gameRunning = true;
+  clearInterval(gameTimerInterval);
+  gameTimerInterval = setInterval(tickGameTimer, 1000);
+  setupControls();
+  if (animFrame) cancelAnimationFrame(animFrame);
+  gameLoop();
+}
+
+function resizeCanvas() {
+  const scr = document.getElementById('gameScreen');
+  GW = scr.clientWidth; GH = scr.clientHeight;
+  canvas.width = GW; canvas.height = GH;
+  myPlayer.r = Math.min(GW, GH) * 0.055;
+  opPlayer.r = myPlayer.r;
+  puck.r = Math.min(GW, GH) * 0.028;
+  const goalHalfH = Math.min(GW, GH) * 0.15;
+  if (isMobile) {
+    const cx = GW/2;
+    leftGoalY1 = cx - goalHalfH; leftGoalY2 = cx + goalHalfH; leftGoalX = GH*0.04;
+    rightGoalY1 = cx - goalHalfH; rightGoalY2 = cx + goalHalfH; rightGoalX = GH - GH*0.04;
+  } else {
+    const cy = GH/2;
+    leftGoalY1 = cy - goalHalfH; leftGoalY2 = cy + goalHalfH; leftGoalX = GW*0.03;
+    rightGoalY1 = cy - goalHalfH; rightGoalY2 = cy + goalHalfH; rightGoalX = GW - GW*0.03;
+  }
+}
+
+function resetPositions() {
+  const cx = GW/2, cy = GH/2;
+  puck.x = cx; puck.y = cy; puck.vx = 0; puck.vy = 0;
+  if (isMobile) {
+    myPlayer.x = cx; myPlayer.y = GH*0.78;
+    opPlayer.x = cx; opPlayer.y = GH*0.22;
+  } else {
+    if (isHost) {
+      myPlayer.x = GW*0.75; myPlayer.y = cy;
+      opPlayer.x = GW*0.25; opPlayer.y = cy;
+    } else {
+      myPlayer.x = GW*0.25; myPlayer.y = cy;
+      opPlayer.x = GW*0.75; opPlayer.y = cy;
+    }
+  }
+  goalCooldown = false;
+}
+
+// ==================== TIMER ====================
+function tickGameTimer() {
+  if (!gameRunning) return;
+  gameSecondsLeft--;
+  const m = Math.floor(gameSecondsLeft/60), s = gameSecondsLeft%60;
+  document.getElementById('gameTimer').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+  
+  // Update ping display
+  if (!isBot && pingMs > 0) {
+    document.getElementById('gamePing').textContent = `${pingMs}ms`;
+  }
+  
+  if (gameSecondsLeft <= 0) { endGame(); }
+}
+
+function endGame() {
+  gameRunning = false;
+  clearInterval(gameTimerInterval);
+  if (pingInterval) { clearInterval(pingInterval); pingInterval = null; }
+  if (channel) { try { channel.unsubscribe(); } catch(e){} channel = null; }
+  if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
+  showResult();
+}
+
+function showResult() {
+  const trophy = document.getElementById('resultTrophy');
+  const title = document.getElementById('resultTitle');
+  const score = document.getElementById('resultScore');
+  score.textContent = `${scoreMe} : ${scoreOp}`;
+  if (scoreMe > scoreOp) { trophy.textContent='🏆'; title.textContent='Победа!'; title.className='result-title result-win'; score.className='result-score result-win'; }
+  else if (scoreMe < scoreOp) { trophy.textContent='😔'; title.textContent='Поражение'; title.className='result-title result-loss'; score.className='result-score result-loss'; }
+  else { trophy.textContent='🤝'; title.textContent='Ничья'; title.className='result-title result-draw'; score.className='result-score result-draw'; }
+  showScreen('resultScreen');
+}
+
+// ==================== CONTROLS (DRAG TO MOVE) ====================
+function setupControls() {
+  canvas.onpointerdown = null;
+  canvas.onpointermove = null;
+  canvas.onpointerup = null;
+  canvas.onpointercancel = null;
+  
+  canvas.addEventListener('pointerdown', onPointerDown, { passive: false });
+  canvas.addEventListener('pointermove', onPointerMove, { passive: false });
+  canvas.addEventListener('pointerup', onPointerUp, { passive: false });
+  canvas.addEventListener('pointercancel', onPointerUp, { passive: false });
+}
+
+function getCanvasPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+}
+
+function onPointerDown(e) {
+  e.preventDefault();
+  const pos = getCanvasPos(e);
+  const dx = pos.x - myPlayer.x;
+  const dy = pos.y - myPlayer.y;
+  const dist = Math.hypot(dx, dy);
+  
+  // Only start drag if touching near the player (within 2x radius for easier grab)
+  if (dist < myPlayer.r * 2.5) {
+    dragActive = true;
+    dragPointerId = e.pointerId;
+    dragOffsetX = dx;
+    dragOffsetY = dy;
+    try { canvas.setPointerCapture(e.pointerId); } catch(err) {}
+  }
+}
+
+function onPointerMove(e) {
+  e.preventDefault();
+  if (!dragActive || !gameRunning || e.pointerId !== dragPointerId) return;
+  
+  const pos = getCanvasPos(e);
+  let nx = pos.x - dragOffsetX;
+  let ny = pos.y - dragOffsetY;
+  
+  // Apply zone constraints
+  nx = constrainX(nx);
+  ny = constrainY(ny);
+  
+  myPlayer.x = nx;
+  myPlayer.y = ny;
+  
+  checkPlayerPuckCollision(myPlayer, true);
+}
+
+function onPointerUp(e) {
+  if (e.pointerId === dragPointerId) {
+    dragActive = false;
+    dragPointerId = null;
+    try { canvas.releasePointerCapture(e.pointerId); } catch(err) {}
+  }
+}
+
+function constrainX(nx) {
+  const r = myPlayer.r;
+  if (isMobile) {
+    return Math.max(r, Math.min(GW - r, nx));
+  } else {
+    if (isHost) {
+      return Math.max(GW/2 + r, Math.min(GW - r, nx));
+    } else {
+      return Math.max(r, Math.min(GW/2 - r, nx));
+    }
+  }
+}
+
+function constrainY(ny) {
+  const r = myPlayer.r;
+  if (isMobile) {
+    if (isHost) {
+      return Math.max(GH/2 + r, Math.min(GH - r, ny));
+    } else {
+      return Math.max(r, Math.min(GH/2 - r, ny));
+    }
+  } else {
+    return Math.max(r, Math.min(GH - r, ny));
+  }
+}
+
+function manualShoot() {
+  if (!gameRunning) return;
+  const dist = Math.hypot(puck.x - myPlayer.x, puck.y - myPlayer.y);
+  if (dist > myPlayer.r * 4) return; // only shoot if near puck
+  
+  let gx, gy;
+  if (isMobile) {
+    gx = GW/2 + (Math.random() - 0.5) * GW * 0.1;
+    gy = isHost ? 0 : GH;
+  } else {
+    gx = isHost ? 0 : GW;
+    gy = GH/2 + (Math.random() - 0.5) * GH * 0.15;
+  }
+  
+  const dx = gx - puck.x, dy = gy - puck.y;
+  const d = Math.hypot(dx, dy) || 1;
+  const speed = Math.min(GW, GH) * 0.02;
+  puck.vx = (dx/d) * speed;
+  puck.vy = (dy/d) * speed;
+  
+  const maxV = Math.min(GW,GH) * 0.028;
+  const totalV = Math.hypot(puck.vx, puck.vy);
+  if (totalV > maxV) { puck.vx = puck.vx/totalV*maxV; puck.vy = puck.vy/totalV*maxV; }
+  
+  if (!isBot) sendPuck();
+}
+
+// ==================== PHYSICS ====================
+function checkPlayerPuckCollision(player, isMe) {
+  const dx = puck.x - player.x;
+  const dy = puck.y - player.y;
+  const dist = Math.hypot(dx, dy);
+  const minDist = player.r + puck.r;
+  if (dist < minDist && dist > 0) {
+    const nx = dx/dist, ny = dy/dist;
+    puck.x = player.x + nx * minDist;
+    puck.y = player.y + ny * minDist;
+    const speed = Math.min(GW,GH) * 0.014;
+    puck.vx = nx * speed;
+    puck.vy = ny * speed;
+    if (!isBot && isMe) sendPuck();
+  }
+}
+
+function updatePuck() {
+  if (!gameRunning) return;
+  puck.x += puck.vx; puck.y += puck.vy;
+  puck.vx *= 0.993; puck.vy *= 0.993;
+  
+  // Walls
+  if (puck.x - puck.r < 0) { puck.x = puck.r; puck.vx *= -0.8; }
+  if (puck.x + puck.r > GW) { puck.x = GW - puck.r; puck.vx *= -0.8; }
+  if (puck.y - puck.r < 0) { puck.y = puck.r; puck.vy *= -0.8; }
+  if (puck.y + puck.r > GH) { puck.y = GH - puck.r; puck.vy *= -0.8; }
+  
+  checkGoals();
+}
+
+function checkGoals() {
+  if (goalCooldown) return;
+  
+  if (isMobile) {
+    const goalW = GH * 0.04;
+    // Top goal
+    if (puck.y - puck.r < goalW && puck.x > leftGoalY1 && puck.x < leftGoalY2) {
+      onGoal(isHost); return;
+    }
+    // Bottom goal
+    if (puck.y + puck.r > GH - goalW && puck.x > rightGoalY1 && puck.x < rightGoalY2) {
+      onGoal(!isHost); return;
+    }
+  } else {
+    const gd = GW * 0.04;
+    // Left goal
+    if (puck.x - puck.r < gd && puck.y >= leftGoalY1 && puck.y <= leftGoalY2) {
+      onGoal(isHost); return;
+    }
+    // Right goal
+    if (puck.x + puck.r > GW - gd && puck.y >= rightGoalY1 && puck.y <= rightGoalY2) {
+      onGoal(!isHost); return;
+    }
+  }
+}
+
+function onGoal(iScoredIt) {
+  goalCooldown = true;
+  if (iScoredIt) {
+    scoreMe++;
+    document.getElementById('myScore').textContent = scoreMe;
+    showGoalOverlay('ГОЛ!', var_accent, playerSettings.name);
+  } else {
+    scoreOp++;
+    document.getElementById('enemyScore').textContent = scoreOp;
+    showGoalOverlay('ГОЛ!', var_red, 'Соперник забил');
+  }
+  if (!isBot && channel) {
+    channel.send({ type:'broadcast', event:'goal_event', payload:{ scorerId: iScoredIt ? myId : opponentId } });
+  }
+  setTimeout(() => {
+    resetPositions();
+    if (!isBot && channel) channel.send({ type:'broadcast', event:'reset_pos' });
+  }, 2200);
+}
+
+const var_accent = '#4a9eff';
+const var_red = '#ef4444';
+
+function showGoalOverlay(text, color, sub) {
+  const ov = document.getElementById('goalOverlay');
+  const gt = document.getElementById('goalText');
+  const gs = document.getElementById('goalSub');
+  gt.textContent = text;
+  gt.style.color = color;
+  gs.textContent = sub;
+  ov.style.background = `radial-gradient(ellipse at center, ${color}33 0%, transparent 70%)`;
+  ov.classList.add('show');
+  setTimeout(() => ov.classList.remove('show'), 2000);
+}
+
+// ==================== BOT AI ====================
+function updateBot() {
+  if (!isBot || !gameRunning) return;
+  botShootTimer--;
+  const sp = Math.min(GW,GH) * 0.009;
+  let tx, ty;
+  const puckDist = Math.hypot(puck.x - opPlayer.x, puck.y - opPlayer.y);
+  
+  if (puckDist < Math.min(GW,GH) * 0.35) {
+    tx = puck.x; ty = puck.y;
+  } else {
+    if (isMobile) { tx = GW/2; ty = GH*0.25; }
+    else { tx = GW*0.25; ty = GH/2; }
+  }
+  
+  const dx = tx - opPlayer.x, dy = ty - opPlayer.y;
+  const dist = Math.hypot(dx,dy) || 1;
+  let nx = opPlayer.x + (dx/dist)*sp*1.3;
+  let ny = opPlayer.y + (dy/dist)*sp*1.3;
+  
+  if (isMobile) {
+    ny = Math.max(opPlayer.r, Math.min(GH/2 - opPlayer.r, ny));
+    nx = Math.max(opPlayer.r, Math.min(GW - opPlayer.r, nx));
+  } else {
+    nx = Math.max(opPlayer.r, Math.min(GW/2 - opPlayer.r, nx));
+    ny = Math.max(opPlayer.r, Math.min(GH - opPlayer.r, ny));
+  }
+  opPlayer.x = nx; opPlayer.y = ny;
+  checkPlayerPuckCollision(opPlayer, false);
+  
+  if (botShootTimer <= 0 && puckDist < Math.min(GW,GH)*0.25) {
+    botShoot();
+    botShootTimer = 50 + Math.random()*70;
+  }
+}
+
+function botShoot() {
+  let gx, gy;
+  if (isMobile) { gx = GW/2 + (Math.random()-0.5)*GW*0.15; gy = GH - GH*0.02; }
+  else { gx = GW - GW*0.02; gy = GH/2 + (Math.random()-0.5)*GH*0.2; }
+  const dx = gx - puck.x, dy = gy - puck.y;
+  const dist = Math.hypot(dx,dy)||1;
+  const speed = Math.min(GW,GH)*0.016 * (1 + Math.random()*0.4);
+  puck.vx = (dx/dist)*speed; puck.vy = (dy/dist)*speed;
+}
+
+// ==================== ONLINE SYNC ====================
+function sendState() {
+  if (!channel || isBot) return;
+  const now = Date.now();
+  if (now - lastSendTime < 50) return;
+  lastSendTime = now;
+  channel.send({ type:'broadcast', event:'state', payload:{ x: myPlayer.x/GW, y: myPlayer.y/GH, id: myId } });
+}
+
+function sendPuck() {
+  if (!channel || isBot || !isHost) return;
+  channel.send({ type:'broadcast', event:'puck_sync', payload:{ x:puck.x/GW, y:puck.y/GH, vx:puck.vx/GW, vy:puck.vy/GH } });
+}
+
+function receiveState(d) {
+  if (d.id === myId) return;
+  opPlayer.x = d.x * GW; opPlayer.y = d.y * GH;
+}
+
+function receivePuck(d) {
+  if (isHost) return;
+  puck.x = d.x*GW; puck.y = d.y*GH; puck.vx = d.vx*GW; puck.vy = d.vy*GH;
+}
+
+function receiveGoal(d) {
+  // The other player reported a goal
+  // scorerId is who scored — if it's our opponent, we got scored on
+  if (d.scorerId === opponentId) {
+    // Opponent scored on us — we lost a point... wait, "scored" means they put puck in our goal
+    // Actually: the sender says who scored. If scorerId = their id, THEY scored, means we got scored on
+    // But the sender already updated their own score. We need to update ours inversely.
+    // The sender sees scorerId = their myId as "I scored" so for us it means "opponent scored"
+    if (d.scorerId !== myId) {
+      // opponent scored
+      scoreOp++;
+      document.getElementById('enemyScore').textContent = scoreOp;
+      showGoalOverlay('ГОЛ!', var_red, 'Соперник забил');
+    } else {
+      scoreMe++;
+      document.getElementById('myScore').textContent = scoreMe;
+      showGoalOverlay('ГОЛ!', var_accent, playerSettings.name);
+    }
+  }
+}
+
+// ==================== DRAW ====================
+function gameLoop() {
+  if (!gameRunning) return;
+  update();
+  draw();
+  sendState();
+  animFrame = requestAnimationFrame(gameLoop);
+}
+
+function update() {
+  if (isBot) updateBot();
+  if (isHost || isBot) {
+    updatePuck();
+  } else {
+    puck.x += puck.vx; puck.y += puck.vy;
+    puck.vx *= 0.993; puck.vy *= 0.993;
+  }
+  checkPlayerPuckCollision(myPlayer, true);
+}
+
+function draw() {
+  ctx.clearRect(0, 0, GW, GH);
+  drawRink();
+  drawGoals();
+  drawCenterLine();
+  drawPuck();
+  drawPlayer(opPlayer, false);
+  drawPlayer(myPlayer, true);
+  
+  // Draw drag hint if not dragging
+  if (!dragActive && gameRunning) {
+    drawDragHint();
+  }
+}
+
+function drawRink() {
+  // Clean ice surface
+  const grad = ctx.createLinearGradient(0, 0, GW, GH);
+  grad.addColorStop(0, '#c8dff0');
+  grad.addColorStop(0.5, '#daeaf5');
+  grad.addColorStop(1, '#c4dbec');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, GW, GH);
+  
+  // Subtle scratches
+  ctx.strokeStyle = 'rgba(180,210,235,0.4)';
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i < GW; i += 35) {
+    ctx.beginPath();
+    ctx.moveTo(i, 0);
+    ctx.lineTo(i, GH);
+    ctx.stroke();
+  }
+  
+  // Rink border
+  const bw = 14;
+  ctx.strokeStyle = '#7ba0be';
+  ctx.lineWidth = 4;
+  const cr = 30;
+  ctx.beginPath();
+  ctx.roundRect(bw, bw, GW - bw*2, GH - bw*2, cr);
+  ctx.stroke();
+  
+  // Board fill (outer area)
+  ctx.fillStyle = '#3a5a75';
+  ctx.fillRect(0, 0, GW, bw);
+  ctx.fillRect(0, GH-bw, GW, bw);
+  ctx.fillRect(0, 0, bw, GH);
+  ctx.fillRect(GW-bw, 0, bw, GH);
+  
+  // Face-off circles
+  const rad = Math.min(GW,GH) * 0.1;
+  ctx.strokeStyle = 'rgba(180,70,70,0.25)';
+  ctx.lineWidth = 1.5;
+  drawCircle(GW*0.25, GH*0.25, rad);
+  drawCircle(GW*0.75, GH*0.25, rad);
+  drawCircle(GW*0.25, GH*0.75, rad);
+  drawCircle(GW*0.75, GH*0.75, rad);
+  
+  // Face-off dots
+  ctx.fillStyle = 'rgba(180,70,70,0.35)';
+  [
+    [GW*0.25, GH*0.25], [GW*0.75, GH*0.25],
+    [GW*0.25, GH*0.75], [GW*0.75, GH*0.75]
+  ].forEach(([x,y]) => {
+    ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI*2); ctx.fill();
+  });
+}
+
+function drawCircle(x, y, r) {
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.stroke();
+}
+
+function drawGoals() {
+  const gd = isMobile ? GH*0.04 : GW*0.04;
+  if (isMobile) {
+    drawGoalArea(leftGoalY1, 0, leftGoalY2-leftGoalY1, gd);
+    drawGoalArea(rightGoalY1, GH-gd, rightGoalY2-rightGoalY1, gd);
+  } else {
+    drawGoalArea(0, leftGoalY1, gd, leftGoalY2-leftGoalY1);
+    drawGoalArea(GW-gd, rightGoalY1, gd, rightGoalY2-rightGoalY1);
+  }
+}
+
+function drawGoalArea(x, y, w, h) {
+  ctx.fillStyle = 'rgba(200, 60, 80, 0.12)';
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = 'rgba(200, 60, 80, 0.5)';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x, y, w, h);
+  
+  // Net lines
+  ctx.strokeStyle = 'rgba(200, 60, 80, 0.15)';
+  ctx.lineWidth = 0.8;
+  const step = 6;
+  for (let i = 0; i < Math.max(w, h); i += step) {
+    if (w > h) {
+      ctx.beginPath(); ctx.moveTo(x + i, y); ctx.lineTo(x + i, y + h); ctx.stroke();
+    } else {
+      ctx.beginPath(); ctx.moveTo(x, y + i); ctx.lineTo(x + w, y + i); ctx.stroke();
+    }
+  }
+}
+
+function drawCenterLine() {
+  ctx.strokeStyle = 'rgba(50,100,180,0.4)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([10, 6]);
+  ctx.beginPath();
+  if (isMobile) { ctx.moveTo(18, GH/2); ctx.lineTo(GW-18, GH/2); }
+  else { ctx.moveTo(GW/2, 18); ctx.lineTo(GW/2, GH-18); }
+  ctx.stroke();
+  ctx.setLineDash([]);
+  
+  // Center circle
+  ctx.strokeStyle = 'rgba(50,100,180,0.3)';
+  ctx.lineWidth = 1.5;
+  const r = Math.min(GW,GH) * 0.08;
+  ctx.beginPath(); ctx.arc(GW/2, GH/2, r, 0, Math.PI*2); ctx.stroke();
+  
+  // Center dot
+  ctx.fillStyle = 'rgba(50,100,180,0.4)';
+  ctx.beginPath(); ctx.arc(GW/2, GH/2, 5, 0, Math.PI*2); ctx.fill();
+}
+
+function drawPuck() {
+  ctx.save();
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.15)';
+  ctx.beginPath(); ctx.ellipse(puck.x+2, puck.y+3, puck.r*1.1, puck.r*0.5, 0, 0, Math.PI*2); ctx.fill();
+  // Puck body
+  const pg = ctx.createRadialGradient(puck.x-puck.r*0.3, puck.y-puck.r*0.3, 0, puck.x, puck.y, puck.r);
+  pg.addColorStop(0, '#444'); pg.addColorStop(1, '#111');
+  ctx.fillStyle = pg;
+  ctx.beginPath(); ctx.arc(puck.x, puck.y, puck.r, 0, Math.PI*2); ctx.fill();
+  // Highlight
+  ctx.fillStyle = 'rgba(255,255,255,0.15)';
+  ctx.beginPath(); ctx.arc(puck.x - puck.r*0.2, puck.y - puck.r*0.2, puck.r*0.4, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+
+const avatarCache = {};
+function getOrLoadImg(src) {
+  if (!src || src.length < 10) return null;
+  if (avatarCache[src]) return avatarCache[src];
+  const img = new Image();
+  img.src = src;
+  avatarCache[src] = img;
+  return img;
+}
+
+function drawPlayer(player, isMe) {
+  const r = player.r;
+  ctx.save();
+  
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.12)';
+  ctx.beginPath(); ctx.ellipse(player.x+3, player.y+4, r*1.05, r*0.45, 0, 0, Math.PI*2); ctx.fill();
+  
+  const avatarSrc = isMe ? getMyAvatarSrc() : _enemyAvatar;
+  const isEmoji = !avatarSrc || avatarSrc.length <= 4;
+  
+  // Base circle
+  const col1 = isMe ? '#3388dd' : '#cc3344';
+  const col2 = isMe ? '#2266aa' : '#aa2233';
+  const grad = ctx.createRadialGradient(player.x - r*0.3, player.y - r*0.3, 0, player.x, player.y, r);
+  grad.addColorStop(0, isMe ? '#5599ee' : '#ee5566');
+  grad.addColorStop(1, col2);
+  ctx.fillStyle = grad;
+  ctx.beginPath(); ctx.arc(player.x, player.y, r, 0, Math.PI*2); ctx.fill();
+  
+  // Avatar image or emoji
+  if (!isEmoji && avatarSrc) {
+    const img = getOrLoadImg(avatarSrc);
+    if (img && img.complete && img.naturalWidth > 0) {
+      ctx.save();
+      ctx.beginPath(); ctx.arc(player.x, player.y, r-3, 0, Math.PI*2); ctx.clip();
+      ctx.drawImage(img, player.x-r+3, player.y-r+3, (r-3)*2, (r-3)*2);
+      ctx.restore();
+    }
+  } else if (avatarSrc) {
+    ctx.font = `${r*0.9}px serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(avatarSrc, player.x, player.y + 2);
+  }
+  
+  // Border ring
+  ctx.strokeStyle = isMe ? '#4a9eff' : '#ef4444';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.arc(player.x, player.y, r, 0, Math.PI*2); ctx.stroke();
+  
+  // Highlight
+  ctx.fillStyle = 'rgba(255,255,255,0.12)';
+  ctx.beginPath(); ctx.arc(player.x - r*0.25, player.y - r*0.3, r*0.45, 0, Math.PI*2); ctx.fill();
+  
+  ctx.restore();
+}
+
+function drawDragHint() {
+  // Subtle pulsing ring around player
+  const t = Date.now() * 0.003;
+  const alpha = 0.08 + Math.sin(t) * 0.05;
+  const expand = 8 + Math.sin(t) * 4;
+  ctx.strokeStyle = `rgba(74, 158, 255, ${alpha})`;
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.arc(myPlayer.x, myPlayer.y, myPlayer.r + expand, 0, Math.PI*2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function getMyAvatarSrc() {
+  if (playerSettings.customAvatar) return playerSettings.customAvatar;
+  return playerSettings.avatar || '🏒';
+}
+
+let _enemyAvatar = '🤖';
+function getAvatarForSend() {
+  return playerSettings.customAvatar || playerSettings.avatar || '🏒';
+}
+
+function setAvatarUI(containerId, src) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  if (!src || src.length <= 4) {
+    container.innerHTML = '';
+    container.textContent = src || '❓';
+    container.style.fontSize = '1.1rem';
+  } else {
+    container.innerHTML = '';
+    const img = document.createElement('img');
+    img.src = src;
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.objectFit = 'cover';
+    container.appendChild(img);
+    container.style.fontSize = '';
+  }
+}
+
+// ==================== RESIZE ====================
+window.addEventListener('resize', () => {
+  isMobile = window.innerWidth <= 768 || ('ontouchstart' in window);
+  if (gameRunning) {
+    resizeCanvas();
+    resetPositions();
+  }
+});
+
+// Init
+init();
+</script>
+</body>
+</html>
